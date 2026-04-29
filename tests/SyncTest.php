@@ -14,7 +14,7 @@ class FakeUser extends Model
 
     protected $table = 'fake_users';
 
-    protected $fillable = ['email', 'subscribed_to_newsletter'];
+    protected $fillable = ['email', 'subscribed_to_newsletter', 'email_verified_at'];
 
     public $timestamps = false;
 
@@ -39,6 +39,7 @@ class SyncTest extends TestCase
             $table->id();
             $table->string('email')->unique();
             $table->boolean('subscribed_to_newsletter')->default(false);
+            $table->timestamp('email_verified_at')->nullable();
         });
     }
 
@@ -106,5 +107,22 @@ class SyncTest extends TestCase
 
         $user->update(['subscribed_to_newsletter' => true]);
         $this->assertEquals(1, Subscriber::count());
+    }
+
+    #[Test]
+    public function it_copies_email_verified_at_to_subscriber_when_present(): void
+    {
+        $verifiedAt = now()->startOfSecond();
+
+        FakeUser::create([
+            'email' => 'user@example.com',
+            'subscribed_to_newsletter' => true,
+            'email_verified_at' => $verifiedAt,
+        ]);
+
+        $this->assertDatabaseHas(config('kanpen.tables.subscribers'), [
+            'email' => 'user@example.com',
+            'email_verified_at' => $verifiedAt->toDateTimeString(),
+        ]);
     }
 }

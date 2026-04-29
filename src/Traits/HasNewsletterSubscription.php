@@ -47,6 +47,7 @@ trait HasNewsletterSubscription
     public function syncSubscriberRecord(): void
     {
         $email = $this->getSubscriberEmail();
+        $emailVerifiedAt = $this->email_verified_at ?? null;
 
         if (empty($email)) {
             return;
@@ -58,7 +59,16 @@ trait HasNewsletterSubscription
             if ($existing && $existing->trashed()) {
                 $existing->restore();
             } elseif (! $existing) {
-                Subscriber::create(['email' => $email]);
+                Subscriber::create([
+                    'email' => $email,
+                    'email_verified_at' => $emailVerifiedAt,
+                ]);
+
+                return;
+            }
+
+            if (! is_null($emailVerifiedAt) && is_null($existing->email_verified_at)) {
+                $existing->forceFill(['email_verified_at' => $emailVerifiedAt])->saveQuietly();
             }
         } else {
             Subscriber::where('email', $email)->delete();
@@ -78,12 +88,20 @@ trait HasNewsletterSubscription
     public function subscribe(): void
     {
         $email = $this->getSubscriberEmail();
+        $emailVerifiedAt = $this->email_verified_at ?? null;
         $subscriber = Subscriber::withTrashed()->where('email', $email)->first();
 
         if ($subscriber && $subscriber->trashed()) {
             $subscriber->restore();
         } elseif (! $subscriber) {
-            $subscriber = Subscriber::create(['email' => $email]);
+            $subscriber = Subscriber::create([
+                'email' => $email,
+                'email_verified_at' => $emailVerifiedAt,
+            ]);
+        }
+
+        if (! is_null($emailVerifiedAt) && is_null($subscriber->email_verified_at)) {
+            $subscriber->forceFill(['email_verified_at' => $emailVerifiedAt])->saveQuietly();
         }
 
         if (config('kanpen.verify') && ! $subscriber->hasVerifiedEmail()) {

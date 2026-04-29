@@ -531,6 +531,7 @@ class User extends Authenticatable
 **How it works:**
 
 - When the model is saved and `shouldBeSubscribed()` returns `true` → the email is added to the subscribers table.
+- If the model has `email_verified_at` set → it is copied to the subscriber record.
 - When `shouldBeSubscribed()` returns `false` → the subscriber record is soft-deleted.
 - When the user is hard-deleted → the subscriber record is force-deleted.
 - If a previously unsubscribed user re-subscribes → the soft-deleted record is restored (no duplicate).

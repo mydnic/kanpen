@@ -23,6 +23,7 @@ class Subscriber extends Model
 
     protected $fillable = [
         'email',
+        'email_verified_at',
         'unsubscribe_token',
     ];
 
