@@ -2,9 +2,13 @@
 
 namespace Mydnic\Kanpen;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Mydnic\Kanpen\Commands\DispatchScheduledCampaignsCommand;
 use Mydnic\Kanpen\Commands\SyncSubscribersCommand;
 
@@ -14,6 +18,7 @@ class KanpenServiceProvider extends ServiceProvider
     {
         $this->registerPublishing();
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'kanpen');
+        $this->registerRateLimiter();
         $this->registerRoutes();
         $this->registerSchedule();
 
@@ -23,6 +28,26 @@ class KanpenServiceProvider extends ServiceProvider
                 DispatchScheduledCampaignsCommand::class,
             ]);
         }
+    }
+
+    protected function registerRateLimiter(): void
+    {
+        RateLimiter::for('kanpen-subscribe', function (Request $request) {
+            if (! config('kanpen.throttle.enabled', true)) {
+                return Limit::none();
+            }
+
+            $perIp = config('kanpen.throttle.per_ip', ['attempts' => 10, 'minutes' => 1]);
+            $perEmail = config('kanpen.throttle.per_email', ['attempts' => 3, 'minutes' => 60]);
+
+            // Hashed so the limiter cache never holds a plain email address.
+            $email = sha1(Str::lower(trim((string) $request->input('email'))));
+
+            return [
+                Limit::perMinutes($perIp['minutes'], $perIp['attempts'])->by('kanpen-ip|'.$request->ip()),
+                Limit::perMinutes($perEmail['minutes'], $perEmail['attempts'])->by('kanpen-email|'.$email),
+            ];
+        });
     }
 
     protected function registerSchedule(): void
@@ -62,13 +87,17 @@ class KanpenServiceProvider extends ServiceProvider
 
     protected function registerRoutes(): void
     {
-        Route::group($this->webRouteConfiguration(), function () {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-        });
+        if (config('kanpen.routes.web', true)) {
+            Route::group($this->webRouteConfiguration(), function () {
+                $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+            });
+        }
 
-        Route::group($this->apiRouteConfiguration(), function () {
-            $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
-        });
+        if (config('kanpen.routes.api', true)) {
+            Route::group($this->apiRouteConfiguration(), function () {
+                $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+            });
+        }
 
         if (config('kanpen.campaigns.enabled', true)) {
             Route::group($this->campaignRouteConfiguration(), function () {

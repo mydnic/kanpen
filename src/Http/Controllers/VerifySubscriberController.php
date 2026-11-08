@@ -13,9 +13,9 @@ class VerifySubscriberController extends Controller
 {
     public function __invoke(Request $request)
     {
-        $subscriber = Subscriber::find($request->id);
+        $subscriber = Subscriber::find($request->route('id'));
 
-        if (! hash_equals((string) $request->route('id'), (string) $subscriber->getKey())) {
+        if (! $subscriber) {
             throw new SubscriberVerificationException;
         }
 

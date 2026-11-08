@@ -73,6 +73,8 @@ class Subscriber extends Model
     /**
      * Return the token-based unsubscribe URL for this subscriber.
      * Generates and persists a token on-the-fly for legacy rows that predate the column.
+     * The route name is configurable so apps that register their own routes
+     * instead of the package ones can still use this method.
      */
     public function getUnsubscribeUrl(): string
     {
@@ -80,6 +82,9 @@ class Subscriber extends Model
             $this->updateQuietly(['unsubscribe_token' => Str::random(64)]);
         }
 
-        return route('kanpen.unsubscribe', ['token' => $this->unsubscribe_token]);
+        return route(
+            config('kanpen.routes.unsubscribe_name', 'kanpen.unsubscribe'),
+            ['token' => $this->unsubscribe_token]
+        );
     }
 }
