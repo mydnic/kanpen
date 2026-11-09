@@ -42,6 +42,38 @@ return [
 
     /*
      |--------------------------------------------------------------------------
+     | Subscription Throttling
+     |--------------------------------------------------------------------------
+     | The subscribe endpoints are public and send mail, so they are rate
+     | limited by default. The IP cap stops a single client hammering the
+     | endpoint; the email cap stops a pool of IPs burying one mailbox.
+     | Set 'enabled' to false only if you apply your own throttle middleware.
+     */
+    'throttle' => [
+        'enabled' => true,
+
+        'per_ip' => ['attempts' => 10, 'minutes' => 1],
+        'per_email' => ['attempts' => 3, 'minutes' => 60],
+    ],
+
+    /*
+     |--------------------------------------------------------------------------
+     | Routes
+     |--------------------------------------------------------------------------
+     | Turn 'web' or 'api' off to use the models, campaigns and commands
+     | without the package HTTP layer, and register your own routes instead.
+     | 'unsubscribe_name' is the named route used to build unsubscribe links,
+     | so point it at your own route when you do.
+     */
+    'routes' => [
+        'web' => true,
+        'api' => true,
+
+        'unsubscribe_name' => 'kanpen.unsubscribe',
+    ],
+
+    /*
+     |--------------------------------------------------------------------------
      | Campaigns
      |--------------------------------------------------------------------------
      | Configuration for the newsletter campaign feature.
