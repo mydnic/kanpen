@@ -8,12 +8,12 @@ class TrackingUrlService
 {
     public function openPixelUrl(CampaignDelivery $send): string
     {
-        return route('kanpen.tracking.open', ['token' => $send->token]);
+        return route(config('kanpen.routes.tracking_open_name', 'kanpen.tracking.open'), ['token' => $send->token]);
     }
 
     public function clickProxyUrl(CampaignDelivery $send, string $originalUrl): string
     {
-        return route('kanpen.tracking.click', [
+        return route(config('kanpen.routes.tracking_click_name', 'kanpen.tracking.click'), [
             'token' => $send->token,
             'url' => base64_encode($originalUrl),
         ]);

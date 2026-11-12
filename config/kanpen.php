@@ -62,14 +62,20 @@ return [
      |--------------------------------------------------------------------------
      | Turn 'web' or 'api' off to use the models, campaigns and commands
      | without the package HTTP layer, and register your own routes instead.
-     | 'unsubscribe_name' is the named route used to build unsubscribe links,
-     | so point it at your own route when you do.
+     | The names below are the routes the package resolves when it builds the
+     | links that go out in emails. They all live in the 'web' group, so when
+     | you turn it off you either point them at your own routes or turn the
+     | matching feature off ('verify' above, 'tracking' below). The confirm
+     | form on the unsubscribe page posts to '<unsubscribe_name>.destroy'.
      */
     'routes' => [
         'web' => true,
         'api' => true,
 
         'unsubscribe_name' => 'kanpen.unsubscribe',
+        'verify_name' => 'kanpen.verify',
+        'tracking_open_name' => 'kanpen.tracking.open',
+        'tracking_click_name' => 'kanpen.tracking.click',
     ],
 
     /*

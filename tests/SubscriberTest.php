@@ -114,6 +114,19 @@ class SubscriberTest extends TestCase
     }
 
     #[Test]
+    public function it_posts_the_confirmation_form_to_the_configured_route_name(): void
+    {
+        Route::delete('newsletter/leave/{token}', fn () => 'bye')->name('app.unsubscribe.destroy');
+        config()->set('kanpen.routes.unsubscribe_name', 'app.unsubscribe');
+
+        $subscriber = Subscriber::create(['email' => 'some@email.com']);
+
+        $this->get("/kanpen/unsubscribe/{$subscriber->unsubscribe_token}")
+            ->assertStatus(200)
+            ->assertSee("/newsletter/leave/{$subscriber->unsubscribe_token}", false);
+    }
+
+    #[Test]
     public function it_unsubscribes_via_token_on_a_confirmed_delete(): void
     {
         Event::fake([SubscriberDeleted::class]);

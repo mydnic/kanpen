@@ -30,7 +30,7 @@ class SubscriberVerifyEmail extends Notification
     protected function verificationUrl($notifiable): string
     {
         return URL::temporarySignedRoute(
-            'kanpen.verify',
+            config('kanpen.routes.verify_name', 'kanpen.verify'),
             Carbon::now()->addMinutes(config('kanpen.verification_expiration', 60)),
             [
                 'id' => $notifiable->getKey(),
