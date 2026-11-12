@@ -98,8 +98,26 @@ class WithoutPackageRoutesTest extends TestCase
 
         $html = (new CampaignMail($send->campaign, $send))->content()->htmlString;
 
-        $this->assertStringContainsString("/news/leave/{$send->subscriber->unsubscribe_token}", $html);
         $this->assertStringContainsString("/news/open/{$send->token}", $html);
         $this->assertStringContainsString("/news/click/{$send->token}", $html);
+        $this->assertStringContainsString(
+            "/news/leave/{$send->subscriber->unsubscribe_token}",
+            $this->proxiedUrls($html)
+        );
+    }
+
+    /**
+     * Click tracking rewrites the footer link too, so the unsubscribe URL sits
+     * base64 encoded in the proxy's 'url' parameter rather than literally in
+     * the HTML.
+     */
+    private function proxiedUrls(string $html): string
+    {
+        preg_match_all('/[?&]url=([^"\'&]+)/', $html, $matches);
+
+        return implode("\n", array_map(
+            fn (string $value) => base64_decode(urldecode($value)),
+            $matches[1]
+        ));
     }
 }
