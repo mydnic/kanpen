@@ -40,13 +40,23 @@ class KanpenServiceProvider extends ServiceProvider
             $perIp = config('kanpen.throttle.per_ip', ['attempts' => 10, 'minutes' => 1]);
             $perEmail = config('kanpen.throttle.per_email', ['attempts' => 3, 'minutes' => 60]);
 
-            // Hashed so the limiter cache never holds a plain email address.
-            $email = sha1(Str::lower(trim((string) $request->input('email'))));
-
-            return [
+            $limits = [
                 Limit::perMinutes($perIp['minutes'], $perIp['attempts'])->by('kanpen-ip|'.$request->ip()),
-                Limit::perMinutes($perEmail['minutes'], $perEmail['attempts'])->by('kanpen-email|'.$email),
             ];
+
+            // Anything that is not a string (email[]=a) never reaches a mailbox:
+            // it stops at validation, so only the IP cap applies. Casting it here
+            // would raise "Array to string conversion" and turn a 422 into a 500.
+            $email = $request->input('email');
+
+            if (is_string($email) && trim($email) !== '') {
+                // Hashed so the limiter cache never holds a plain email address.
+                $key = sha1(Str::lower(trim($email)));
+
+                $limits[] = Limit::perMinutes($perEmail['minutes'], $perEmail['attempts'])->by('kanpen-email|'.$key);
+            }
+
+            return $limits;
         });
     }
 

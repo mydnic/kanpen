@@ -62,6 +62,28 @@ class SubscribeThrottleTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_a_non_string_email_with_a_validation_error(): void
+    {
+        // The limiter runs before validation, so it has to cope with whatever
+        // the client sent. Casting an array to a string would 500 here.
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])
+            ->postJson('/kanpen-api/subscriber', ['email' => ['user@throttle.invalid']])
+            ->assertStatus(422);
+    }
+
+    #[Test]
+    public function it_does_not_share_one_bucket_between_requests_without_an_email(): void
+    {
+        // An empty address is not an address: these requests must only be
+        // capped per IP, not pile up in a single cross-client bucket.
+        foreach (['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4'] as $ip) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->postJson('/kanpen-api/subscriber', [])
+                ->assertStatus(422);
+        }
+    }
+
+    #[Test]
     public function it_applies_no_limit_when_throttling_is_disabled(): void
     {
         config()->set('kanpen.throttle.enabled', false);
