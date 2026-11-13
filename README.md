@@ -109,9 +109,13 @@ return [
 
     // Route registration
     'routes' => [
-        'web'              => true,  // POST subscribe, unsubscribe, verify, tracking
-        'api'              => true,  // POST /kanpen-api/subscriber
-        'unsubscribe_name' => 'kanpen.unsubscribe', // route used to build unsubscribe links
+        'web'                 => true,  // POST subscribe, unsubscribe, verify, tracking
+        'api'                 => true,  // POST /kanpen-api/subscriber
+        // Routes resolved when building the links that go out in emails
+        'unsubscribe_name'    => 'kanpen.unsubscribe',
+        'verify_name'         => 'kanpen.verify',
+        'tracking_open_name'  => 'kanpen.tracking.open',
+        'tracking_click_name' => 'kanpen.tracking.click',
     ],
 
     // Verification email content
@@ -201,7 +205,7 @@ Both subscribe endpoints are public and send mail, so they are rate limited out 
 
 Over the limit, the endpoints return `429 Too Many Requests`. Adjust the numbers in the `throttle` config key, or set `throttle.enabled` to `false` if you prefer to apply your own middleware.
 
-Email addresses are lowercased and trimmed before they are counted, and only their hash is kept in the limiter cache.
+Email addresses are lowercased and trimmed before they are counted, and only their hash is kept in the limiter cache. A request that carries no address, or something other than a string, is capped per IP only: it never reaches a mailbox, so it stops at validation with a `422` instead of being counted against a shared bucket.
 
 ### Programmatic Subscription
 
@@ -267,18 +271,43 @@ The token is also injected automatically into all campaign emails via the defaul
 
 ### Using the data layer without the package routes
 
-If you'd rather register your own routes, turn the package ones off and point the unsubscribe link at yours:
+If you'd rather register your own routes, turn the package ones off and point each link at yours:
 
 ```php
 // config/kanpen.php
 'routes' => [
-    'web'              => false,
-    'api'              => false,
-    'unsubscribe_name' => 'app.unsubscribe',
+    'web'                 => false,
+    'api'                 => false,
+    'unsubscribe_name'    => 'app.unsubscribe',
+    'verify_name'         => 'app.verify',
+    'tracking_open_name'  => 'app.tracking.open',
+    'tracking_click_name' => 'app.tracking.click',
 ],
 ```
 
-The models, campaigns, jobs, commands and events keep working; only the HTTP layer is skipped. `getUnsubscribeUrl()` resolves `routes.unsubscribe_name`, so it no longer depends on the package routes being registered.
+The models, campaigns, jobs, commands and events keep working. The HTTP layer is skipped, but the links the package puts in an email are not: every one of them resolves a named route, so turning `web` off means you have to say which route takes its place.
+
+| Config key | Used by | Expected parameters |
+| --- | --- | --- |
+| `unsubscribe_name` | `getUnsubscribeUrl()` and the campaign footer | `{token}` |
+| `<unsubscribe_name>.destroy` | the confirm form on the unsubscribe page | `{token}`, `DELETE` |
+| `verify_name` | the verification email, as a signed URL | `{id}`, `{hash}` |
+| `tracking_open_name` | the open pixel | `{token}` |
+| `tracking_click_name` | the click proxy | `{token}`, `?url=` |
+
+You only need the routes for the features you run: `verify_name` is read when `verify` is on, and the two tracking names when `tracking.enabled` is on. Leave a name pointing at a route that does not exist with its feature enabled and the send throws `RouteNotFoundException`.
+
+Pointing a name at your own route is enough, and the package controllers are not tied to the package routes:
+
+```php
+// routes/web.php
+use Mydnic\Kanpen\Http\Controllers\TrackingController;
+use Mydnic\Kanpen\Http\Controllers\UnsubscribeController;
+
+Route::get('newsletter/leave/{token}', [UnsubscribeController::class, 'show'])->name('app.unsubscribe');
+Route::delete('newsletter/leave/{token}', [UnsubscribeController::class, 'destroy'])->name('app.unsubscribe.destroy');
+Route::get('newsletter/open/{token}', [TrackingController::class, 'open'])->name('app.tracking.open');
+```
 
 ---
 

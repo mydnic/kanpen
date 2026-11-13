@@ -41,7 +41,7 @@
     <div class="card">
         <h1>Unsubscribe</h1>
         <p>Please confirm that you no longer want to receive our emails.</p>
-        <form method="POST" action="{{ route('kanpen.unsubscribe.destroy', ['token' => $token]) }}">
+        <form method="POST" action="{{ route(config('kanpen.routes.unsubscribe_name', 'kanpen.unsubscribe').'.destroy', ['token' => $token]) }}">
             @csrf
             @method('DELETE')
             <button type="submit">Confirm unsubscribe</button>
