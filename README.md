@@ -118,17 +118,9 @@ return [
         'tracking_click_name' => 'kanpen.tracking.click',
     ],
 
-    // Verification email content
-    'mail' => [
-        'verify' => [
-            'expiration' => 60, // minutes
-            'subject'    => 'Verify Email Address',
-            'greeting'   => 'Hello!',
-            'content'    => ['Please click the button below to verify your email address.'],
-            'action'     => 'Verify Email Address',
-            'footer'     => ['If you did not sign up for our newsletter, no further action is required.'],
-        ],
-    ],
+    // Verification email
+    'verification_expiration' => 60, // minutes the signed link stays valid
+    'notification' => Mydnic\Kanpen\Notifications\SubscriberVerifyEmail::class,
 
     // Campaign sending
     'campaigns' => [
@@ -238,7 +230,36 @@ Set `KANPEN_VERIFY=true` in your `.env` (or set `'verify' => true` in config) to
 - A verification email is sent automatically on `subscribe()` or web form submission.
 - Only verified subscribers (`email_verified_at` is not null) receive campaigns.
 
-You can customise every line of the verification email in the `mail.verify` config key.
+#### Writing your own verification email
+
+The default copy is Laravel's generic "Verify Email Address", which on a double opt-in is the only mail standing between a visitor and your list. Point the `notification` config key at your own class to replace it:
+
+```php
+// config/kanpen.php
+'notification' => App\Notifications\ConfirmSubscription::class,
+```
+
+The class is resolved from the container, so constructor injection works. Extending the package notification keeps the signed link and only costs you the copy:
+
+```php
+namespace App\Notifications;
+
+use Illuminate\Notifications\Messages\MailMessage;
+use Mydnic\Kanpen\Notifications\SubscriberVerifyEmail;
+
+class ConfirmSubscription extends SubscriberVerifyEmail
+{
+    public function toMail($notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject('One click and you are in')
+            ->line('Confirm your address to start receiving the Acme newsletter.')
+            ->action('Confirm my address', $this->verificationUrl($notifiable));
+    }
+}
+```
+
+`verificationUrl()` is `protected` on the parent and builds the temporary signed URL from `routes.verify_name`, so your class stays out of the signing business.
 
 The verification route is `GET /kanpen/verify/{id}/{hash}` — this is handled automatically.
 
