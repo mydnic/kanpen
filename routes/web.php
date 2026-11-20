@@ -6,9 +6,13 @@ use Mydnic\Kanpen\Http\Controllers\TrackingController;
 use Mydnic\Kanpen\Http\Controllers\UnsubscribeController;
 use Mydnic\Kanpen\Http\Controllers\VerifySubscriberController;
 
-Route::post('subscriber', [SubscriberController::class, 'store'])
-    ->middleware('throttle:kanpen-subscribe')
-    ->name('store');
+// A site that collects addresses elsewhere still needs the verification and
+// unsubscribe links to resolve, so the public subscribe endpoint has its own flag.
+if (config('kanpen.routes.subscribe', true)) {
+    Route::post('subscriber', [SubscriberController::class, 'store'])
+        ->middleware('throttle:kanpen-subscribe')
+        ->name('store');
+}
 
 // GET only confirms: mail clients and corporate link scanners follow every
 // link in a message, so the deletion itself has to be behind a form post.

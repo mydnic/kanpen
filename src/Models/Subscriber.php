@@ -56,10 +56,16 @@ class Subscriber extends Model
         ])->save();
     }
 
+    /**
+     * The notification class is configurable so an app can write its own copy
+     * for the one mail a double opt-in funnel depends on. Resolved from the
+     * container, and the package default stands in for a config file published
+     * before the key existed.
+     */
     public function sendEmailVerificationNotification(): void
     {
         try {
-            $this->notify(new SubscriberVerifyEmail);
+            $this->notify(app(config('kanpen.notification') ?: SubscriberVerifyEmail::class));
         } catch (\Throwable $e) {
             report($e);
         }

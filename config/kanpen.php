@@ -27,10 +27,20 @@ return [
      | Verification Email Expiration
      |--------------------------------------------------------------------------
      | How long (in minutes) the email verification link remains valid.
-     | To customize the email content, publish and override the notification:
-     | php artisan vendor:publish --tag=kanpen-notifications
      */
     'verification_expiration' => 60,
+
+    /*
+     |--------------------------------------------------------------------------
+     | Verification Notification
+     |--------------------------------------------------------------------------
+     | The notification sent to a subscriber when 'verify' is on. On a double
+     | opt-in this mail is the whole funnel, so point this at your own class to
+     | write your own copy. It is resolved from the container, and extending
+     | Mydnic\Kanpen\Notifications\SubscriberVerifyEmail keeps the signed link
+     | for free.
+     */
+    'notification' => Mydnic\Kanpen\Notifications\SubscriberVerifyEmail::class,
 
     /*
      |--------------------------------------------------------------------------
@@ -67,10 +77,14 @@ return [
      | you turn it off you either point them at your own routes or turn the
      | matching feature off ('verify' above, 'tracking' below). The confirm
      | form on the unsubscribe page posts to '<unsubscribe_name>.destroy'.
+     | 'subscribe' only covers the two public subscribe endpoints (web and
+     | api): turn it off to keep verification and unsubscription while
+     | collecting addresses through your own form.
      */
     'routes' => [
         'web' => true,
         'api' => true,
+        'subscribe' => true,
 
         'unsubscribe_name' => 'kanpen.unsubscribe',
         'verify_name' => 'kanpen.verify',
