@@ -77,10 +77,14 @@ return [
      | you turn it off you either point them at your own routes or turn the
      | matching feature off ('verify' above, 'tracking' below). The confirm
      | form on the unsubscribe page posts to '<unsubscribe_name>.destroy'.
+     | 'subscribe' only covers the two public subscribe endpoints (web and
+     | api): turn it off to keep verification and unsubscription while
+     | collecting addresses through your own form.
      */
     'routes' => [
         'web' => true,
         'api' => true,
+        'subscribe' => true,
 
         'unsubscribe_name' => 'kanpen.unsubscribe',
         'verify_name' => 'kanpen.verify',

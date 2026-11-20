@@ -111,6 +111,7 @@ return [
     'routes' => [
         'web'                 => true,  // POST subscribe, unsubscribe, verify, tracking
         'api'                 => true,  // POST /kanpen-api/subscriber
+        'subscribe'           => true,  // the two public subscribe endpoints only
         // Routes resolved when building the links that go out in emails
         'unsubscribe_name'    => 'kanpen.unsubscribe',
         'verify_name'         => 'kanpen.verify',
@@ -328,6 +329,29 @@ use Mydnic\Kanpen\Http\Controllers\UnsubscribeController;
 Route::get('newsletter/leave/{token}', [UnsubscribeController::class, 'show'])->name('app.unsubscribe');
 Route::delete('newsletter/leave/{token}', [UnsubscribeController::class, 'destroy'])->name('app.unsubscribe.destroy');
 Route::get('newsletter/open/{token}', [TrackingController::class, 'open'])->name('app.tracking.open');
+```
+
+### Keeping the package routes without a public subscribe endpoint
+
+`routes.web => false` is all or nothing: it also costs you verification and unsubscription, which most sites want to keep. If your addresses come in through your own form or a Livewire component, turn off the subscribe endpoints alone:
+
+```php
+// config/kanpen.php
+'routes' => [
+    'web'       => true,
+    'api'       => true,
+    'subscribe' => false,
+],
+```
+
+`POST /kanpen/subscriber` and `POST /kanpen-api/subscriber` are then never registered and return a `404`. Everything else in the web group — verify, unsubscribe, tracking — is untouched. Create the subscriber yourself:
+
+```php
+$subscriber = Subscriber::create(['email' => $email]);
+
+if (config('kanpen.verify')) {
+    $subscriber->sendEmailVerificationNotification();
+}
 ```
 
 ---
