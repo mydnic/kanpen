@@ -88,10 +88,6 @@ class KanpenServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/kanpen'),
             ], 'kanpen-views');
-
-            $this->publishes([
-                __DIR__.'/Notifications/SubscriberVerifyEmail.php' => app_path('Notifications/SubscriberVerifyEmail.php'),
-            ], 'kanpen-notifications');
         }
     }
 
