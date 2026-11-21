@@ -1,5 +1,7 @@
 <?php
 
+use Mydnic\Kanpen\Notifications\SubscriberVerifyEmail;
+
 return [
     /*
      |--------------------------------------------------------------------------
@@ -40,7 +42,7 @@ return [
      | Mydnic\Kanpen\Notifications\SubscriberVerifyEmail keeps the signed link
      | for free.
      */
-    'notification' => Mydnic\Kanpen\Notifications\SubscriberVerifyEmail::class,
+    'notification' => SubscriberVerifyEmail::class,
 
     /*
      |--------------------------------------------------------------------------
